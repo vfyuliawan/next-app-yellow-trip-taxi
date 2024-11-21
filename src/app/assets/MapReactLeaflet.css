@@ -1,0 +1,6 @@
+.leaflet-routing-container {
+    max-height: 80px; /* Limit height */
+    max-width: 20%;  /* Limit width */
+    overflow-y: auto; /* Allow scrolling if needed */
+    font-size: 10px; /* Reduce text size */
+  }
