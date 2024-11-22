@@ -1,5 +1,3 @@
-"use client";
-
 import {
   MapContainer,
   TileLayer,
@@ -61,10 +59,12 @@ const RoutingMachine2 = ({ pickup, dropoff }: { pickup: L.LatLngTuple; dropoff: 
     return null;
   };
 
-export const MapReactLeaflet = (props: {
-  pickup: { latitud: number; longitude: number };
+  export interface MapReactLeafletProps{
+    pickup: { latitud: number; longitude: number };
   dropoff: { latitud: number; longitude: number };
-}) => {
+  }
+
+export const MapReactLeaflet = (props: MapReactLeafletProps) => {
   const pickup = [props.pickup.latitud, props.pickup.longitude] as L.LatLngTuple;
   const dropoff = [props.dropoff.latitud, props.dropoff.longitude] as L.LatLngTuple;
 

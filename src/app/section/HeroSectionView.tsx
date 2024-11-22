@@ -7,7 +7,7 @@ import {
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import CardsInfo from "../component/CardsInfo";
-import { MapReactLeaflet } from "../component/MapReactLeaflet";
+// import { MapReactLeaflet } from "../component/MapReactLeaflet";
 import { useState, useEffect, useRef } from "react";
 import { DataTransaction } from "../core/domain/model/Response/GetModelResponseData";
 import TransactionRepository from "../core/domain/repository/TransactionRepository";
@@ -28,6 +28,16 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { MapReactLeaflet, MapReactLeafletProps } from "@/app/component/MapReactLeaflet";
+import dynamic from "next/dist/shared/lib/dynamic";
+
+
+const DynamicComponentWithNoSSR = dynamic(() => Promise.resolve(MapReactLeaflet), {
+  ssr: false
+})
+
+
+
 
 // Register the components you want to use
 ChartJS.register(
@@ -428,7 +438,7 @@ export default function HeroSectionView() {
         {!loading && dataTransaction.length > 0 ? (
           <section ref={mapRef} id="map">
             <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
-              <MapReactLeaflet
+              <DynamicComponentWithNoSSR
                 pickup={{
                   latitud: pickup.latitud,
                   longitude: pickup.longitude,
