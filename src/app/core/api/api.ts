@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import Swal from "sweetalert2";
 
-const timeOut = 60000; //max request timeout menjadi 3 menit 
+const timeOut = 90000; 
 
 
 const versionAppi  = "/api/v1";

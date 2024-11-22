@@ -1,5 +1,6 @@
 import { get } from "../../api/api";
 import { ConvertGetModelResponseData, GetModelResponseData } from "../model/Response/GetModelResponseData";
+import { ConvertGetModelResponseSummary, GetModelResponseSummary } from '../model/Response/GetModelResponseSummary';
 
 class TransactionRepository {
     constructor() {
@@ -29,6 +30,25 @@ class TransactionRepository {
           return null;
        
       };
+
+      async gatSummaryPaymentMethode  (props:GetModelRequestSummaryData): Promise<GetModelResponseSummary | null>  {
+        
+          const res = await get({ 
+              path: "/api/taxi-trips/payment-summary",
+              params:{
+                startDate: props?.startDate,
+                endDate: props?.endDate
+              } as GetModelRequestSummaryData,
+              isNeedToken: true 
+            });              
+            if (res != null) {
+              const result =
+              ConvertGetModelResponseSummary.toModelResponsePaymentSummary(res);
+                return result;
+            }
+            return null;
+         
+        };
   
 }
 

@@ -13,6 +13,31 @@ import { DataTransaction } from "../core/domain/model/Response/GetModelResponseD
 import TransactionRepository from "../core/domain/repository/TransactionRepository";
 import axios from "axios";
 import DatePicker from "react-datepicker";
+import { Bar } from "react-chartjs-2";
+
+import {
+  DataSummary,
+  GetModelResponseSummary,
+} from "../core/domain/model/Response/GetModelResponseSummary";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+// Register the components you want to use
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface PickupInterface {
   latitud: number;
@@ -41,6 +66,8 @@ export default function HeroSectionView() {
   const [passangerCount, setPassangerCount] = useState("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+
+  const [summaryPayment, setsummaryPayment] = useState<DataSummary[]>([]);
 
   const mapRef = useRef<any>(null); // Create a ref for the map section
 
@@ -73,56 +100,69 @@ export default function HeroSectionView() {
     }
   }
 
+  const getTransaction = async () => {
+    const res = await TransactionRepository.gatSummaryPaymentMethode({
+      startDate: startDate === ""? "2006-01-01" : startDate,
+      endDate: endDate === "" ? "2014-12-31" : endDate
+    });
+    if (res !== null) {
+      setsummaryPayment(res.data);
+    }
+  };
+
   const getAllDataTransaction = async () => {
     setLoading(true);
     setDataTransaction([]);
-    const res = await TransactionRepository.getDetailTransaction({
-      vendor_id: vendor,
-      payment_type: paymentMethode,
-      passenger_count: passangerCount,
-      pickup_datetime_start: startDate,
-      pickup_datetime_end: endDate ?? startDate,
-      page: page,
-      pageSize: 9,
-    });
-    if (res !== null) {
-      // const updatedData = await Promise.all(
-      //   res.data.map(async (item) => {
-      //     const cityPickup =
-      //       (await getCityFromCoordinates(
-      //         parseFloat(item.pickup_latitude),
-      //         parseFloat(item.pickup_longitude)
-      //       )) ?? "Broklyn";
-      //     const cityDropOff =
-      //       (await getCityFromCoordinates(
-      //         parseFloat(item.dropoff_latitude),
-      //         parseFloat(item.dropoff_longitude)
-      //       )) ?? "Newyork";
-
-      //     // Return updated item with cityPickup and
-
-      //     return {
-      //       ...item,
-      //       cityPickup,
-      //       cityDropOff,
-      //     };
-      //   })
-      // );
-      const updatedData = res.data;
-
-      setLoading(false);
-
-      setpickup({
-        latitud: parseFloat(updatedData[0].pickup_latitude),
-        longitude: parseFloat(updatedData[0].pickup_longitude),
+    getTransaction().then(async() =>{
+      const res = await TransactionRepository.getDetailTransaction({
+        vendor_id: vendor,
+        payment_type: paymentMethode,
+        passenger_count: passangerCount,
+        pickup_datetime_start: startDate,
+        pickup_datetime_end: endDate ?? startDate,
+        page: page,
+        pageSize: 9,
       });
-      setdropOff({
-        latitud: parseFloat(updatedData[0].dropoff_latitude),
-        longitude: parseFloat(updatedData[0].dropoff_longitude),
-      });
-
-      setDataTransaction(updatedData); // Update the state with the modified data
-    }
+      if (res !== null) {
+        // const updatedData = await Promise.all(
+        //   res.data.map(async (item) => {
+        //     const cityPickup =
+        //       (await getCityFromCoordinates(
+        //         parseFloat(item.pickup_latitude),
+        //         parseFloat(item.pickup_longitude)
+        //       )) ?? "Broklyn";
+        //     const cityDropOff =
+        //       (await getCityFromCoordinates(
+        //         parseFloat(item.dropoff_latitude),
+        //         parseFloat(item.dropoff_longitude)
+        //       )) ?? "Newyork";
+  
+        //     // Return updated item with cityPickup and
+  
+        //     return {
+        //       ...item,
+        //       cityPickup,
+        //       cityDropOff,
+        //     };
+        //   })
+        // );
+        const updatedData = res.data;
+  
+        setLoading(false);
+  
+        setpickup({
+          latitud: parseFloat(updatedData[0].pickup_latitude),
+          longitude: parseFloat(updatedData[0].pickup_longitude),
+        });
+        setdropOff({
+          latitud: parseFloat(updatedData[0].dropoff_latitude),
+          longitude: parseFloat(updatedData[0].dropoff_longitude),
+        });
+  
+        setDataTransaction(updatedData);
+      }
+    })
+   
   };
 
   const toggleOnClickCard = (data: DataTransaction, index: number) => {
@@ -140,6 +180,46 @@ export default function HeroSectionView() {
     });
   };
 
+  const chartData = {
+    labels: summaryPayment.map((item) => item.payment_type), // Use payment_type as labels
+    datasets: [
+      {
+        label: "Total Amount",
+        data: summaryPayment.map((item) => parseFloat(item.sum_total_amount)), // Convert sum_total_amount to numbers
+        backgroundColor: "rgba(234,179,5, 0.2)", // Set bar color
+        borderColor: "rgb(234,179,5)", // Set border color
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Chart options
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
+          },
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function (value: any) {
+            return `$${value.toLocaleString()}`;
+          },
+        },
+      },
+    },
+  };
+
   useEffect(() => {
     getAllDataTransaction();
 
@@ -147,36 +227,34 @@ export default function HeroSectionView() {
   }, [page]);
 
   const handleDateChangeStartDate = (event: any) => {
-    setEndDate(""); // Update the state with the formatted date
+    setEndDate("");
 
-    const dateValue = event.target.value; // This is in YYYY-MM-DD format
-    const date = new Date(dateValue); // Create a Date object
+    const dateValue = event.target.value;
+    const date = new Date(dateValue);
 
-    // Format the date to DD-MM-YY
-    const day = String(date.getDate()).padStart(2, "0"); // Ensure two digits
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Get the month (1-based index)
-    const year = String(date.getFullYear()); // Get the last two digits of the year
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear());
 
     const formatted = `${year}-${month}-${day}`;
     console.log(formatted);
 
-    setStartDate(formatted); // Update the state with the formatted date
-    setEndDate(formatted); // Update the state with the formatted date
+    setStartDate(formatted);
+    setEndDate(formatted);
   };
 
   const handleDateChangeEndDate = (event: any) => {
-    const dateValue = event.target.value; // This is in YYYY-MM-DD format
-    const date = new Date(dateValue); // Create a Date object
+    const dateValue = event.target.value;
+    const date = new Date(dateValue);
 
-    // Format the date to DD-MM-YY
-    const day = String(date.getDate()).padStart(2, "0"); // Ensure two digits
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Get the month (1-based index)
-    const year = String(date.getFullYear()); // Get the last two digits of the year
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear());
 
     const formatted = `${year}-${month}-${day}`;
     console.log(formatted);
 
-    setEndDate(formatted); // Update the state with the formatted date
+    setEndDate(formatted);
   };
 
   return (
@@ -203,7 +281,7 @@ export default function HeroSectionView() {
           <div className="flex flex-col">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg">
               <form className="">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className=" grid-cols-1 justify-center flex items-center gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   <div className="flex flex-col">
                     <label
                       htmlFor="manufacturer"
@@ -271,13 +349,16 @@ export default function HeroSectionView() {
                       <option value={""}>-- All --</option>
                       <option value={"CSH"}>Cash</option>
                       <option value={"CRD"}>Card</option>
+                      <option value={"DIS"}>Dis</option>
+                      <option value={"NOC"}>Noc</option>
+                      <option value={"UNK"}>Unk</option>
                     </select>
                   </div>
                 </div>
               </form>
 
               <form className="mt-2">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="flex justify-center grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   <div className="flex flex-col">
                     <label
                       htmlFor="manufacturer"
@@ -316,7 +397,7 @@ export default function HeroSectionView() {
                   </div>
                 </div>
               </form>
-              <div className="flex flex-col justify-start items-start  mb-6">
+              <div className="flex justify-center grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -332,8 +413,19 @@ export default function HeroSectionView() {
           </div>
         </div>
 
+        {!loading ?(
+            <div className="mx-auto mt-16 max-w-4xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
+            <Bar
+              data={chartData}
+              options={{
+                responsive: true,
+              }}
+            />
+          </div>
+        ) : null}
+
         {/* Map Section */}
-        {!loading&& dataTransaction.length >0 ? (
+        {!loading && dataTransaction.length > 0 ? (
           <section ref={mapRef} id="map">
             <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
               <MapReactLeaflet
@@ -384,7 +476,7 @@ export default function HeroSectionView() {
               {dataTransaction.map((item, index) => (
                 <CardsInfo
                   key={index + "fasdfasdfsa"}
-                  title={`${item.cityPickup} - ${item.cityDropOff}`}
+                  title={`${item.cityPickup ?? "from"} - ${item.cityDropOff ?? "to"}`}
                   vendorId={item.vendor_id}
                   distance={item.trip_distance}
                   PaymentType={item.payment_type}
@@ -464,6 +556,9 @@ export default function HeroSectionView() {
             </div>
           </div>
         ) : null}
+
+
+      
       </div>
     </div>
   );

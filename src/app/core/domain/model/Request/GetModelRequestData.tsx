@@ -7,3 +7,9 @@ interface GetModelRequestData{
     page:number;
     pageSize:number
 }
+
+interface GetModelRequestSummaryData{
+    startDate: string;
+    endDate: string;
+
+}
