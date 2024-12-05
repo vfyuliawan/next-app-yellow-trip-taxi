@@ -5,13 +5,12 @@ const nextConfig: NextConfig = {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        fs: false, // Example: Avoid including 'fs' in the client bundle
+        fs: false, 
       };
     }
     return config;
   },
-  reactStrictMode: false,
-  // Other configurations here
+  reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
   },

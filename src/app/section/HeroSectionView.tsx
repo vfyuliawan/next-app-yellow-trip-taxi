@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ArrowPathIcon,
@@ -29,12 +29,12 @@ import {
   Legend,
 } from "chart.js";
 import { MapReactLeaflet, MapReactLeafletProps } from "@/app/component/MapReactLeaflet";
-import dynamic from "next/dist/shared/lib/dynamic";
+// import dynamic from "next/dynamic";
 
 
-const DynamicComponentWithNoSSR = dynamic(() => Promise.resolve(MapReactLeaflet), {
-  ssr: false
-})
+// const DynamicComponentWithNoSSR = dynamic(() => Promise.resolve(import("@/app/component/MapReactLeaflet")), {
+//   ssr: false
+// })
 
 
 
@@ -67,6 +67,8 @@ export default function HeroSectionView() {
     longitude: 0,
   });
 
+
+
   const [active, setactive] = useState(0);
 
   const [loading, setLoading] = useState(false);
@@ -79,9 +81,8 @@ export default function HeroSectionView() {
 
   const [summaryPayment, setsummaryPayment] = useState<DataSummary[]>([]);
 
-  const mapRef = useRef<any>(null); // Create a ref for the map section
+  const mapRef = useRef<any>(null); 
 
-  // Function to scroll to the map section
   const scrollToMap = () => {
     if (mapRef.current) {
       mapRef.current.scrollIntoView({ behavior: "smooth" });
@@ -438,7 +439,7 @@ export default function HeroSectionView() {
         {!loading && dataTransaction.length > 0 ? (
           <section ref={mapRef} id="map">
             <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
-              <DynamicComponentWithNoSSR
+              <MapReactLeaflet
                 pickup={{
                   latitud: pickup.latitud,
                   longitude: pickup.longitude,
@@ -482,7 +483,7 @@ export default function HeroSectionView() {
         ) : null}
         {!loading ? (
           <div className="mx-auto mt-16 max-w-4xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
-            <div className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 lg:max-w-none lg:grid-cols-3 lg:gap-y-16">
+            <div className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 lg:max-w-none sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16">
               {dataTransaction.map((item, index) => (
                 <CardsInfo
                   key={index + "fasdfasdfsa"}

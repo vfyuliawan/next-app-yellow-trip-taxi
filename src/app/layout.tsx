@@ -1,8 +1,11 @@
 // RootLayout.tsx (Server Component)
-import type { Metadata } from "next";
+"use client";
+// import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import ClientComponent from "./ClientComponent";  // Import the client component
+import { IsClientCtxProvider } from './is-client-ctx';
+
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -15,10 +18,10 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export const metadata: Metadata = {
-  title: "Yellow Taxi Trip",
-  description: "Yellow Taxi Trip",
-};
+// export const metadata: Metadata = {
+//   title: "Yellow Taxi Trip",
+//   description: "Yellow Taxi Trip",
+// };
 
 export default function RootLayout({
   children,
@@ -29,7 +32,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ClientComponent />  {/* Render the client-side component */}
+        <IsClientCtxProvider>
         {children}
+
+        </IsClientCtxProvider>
       </body>
     </html>
   );
