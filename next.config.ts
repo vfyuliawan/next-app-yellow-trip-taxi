@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  reactStrictMode: true,
+  reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,
   },

@@ -3,12 +3,10 @@ import Swal from "sweetalert2";
 
 const timeOut = 90000; 
 
-
-const versionAppi  = "/api/v1";
-
 export const baseUrl = (): string => {
-  const local = `http://localhost:3001`;
-  return local;
+  const dev = `https://extra-brooke-yeremiadio-46b2183e.koyeb.app`;
+  const uat = `https://extra-brooke-yeremiadio-46b2183e.koyeb.app`;
+  return dev;
 };
 
 export enum CallBackError {
@@ -19,9 +17,9 @@ export const header = async (isNeedToken:boolean) => {
   const token = "Bearer" + " " + localStorage.getItem("token");
 
   return {
-    // "Content-Type": "application/json",
+    "Content-Type": "application/json",
     // language: "IDN",
-    // Authorization: isNeedToken ? token : "" ,
+    Authorization: isNeedToken ? token : "" ,
   };
 };
 
@@ -76,96 +74,80 @@ async function RequestData(
 ): Promise<any> {
   try {
     const resp = await axios(config);
-    if (resp.status === 200) {
+    console.log(resp.status, "response status");
+
+    if (resp.status === 200 || resp.status === 201) {
       if (resp.data.code === "00") {
         return JSON.stringify(resp.data);
       }
-      if (resp.data.code === "4301") {
-        return JSON.stringify(resp.data);
-      }
-      if (resp.data.code === "5101") {
-        return JSON.stringify(resp.data);
-      }
       return JSON.stringify(resp.data);
-    } else if (resp.status === 201) {
-      return JSON.stringify(resp.data);
-    } else if (resp.status === 303) {
+    }
+
+    if (resp.status === 400) {
+      const errorMessage = resp.data.message || "Invalid request data";
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: "Something went wrong!",
-        footer: '<a href="#">Why do I have this issue?</a>'
+        text: errorMessage,
+        footer: '<a href="#">Why do I have this issue?</a>',
       });
-    } else if (resp.status === 400) {
-      const e = resp.data.message;
-    } else if (resp.data.message === "Network Error") {
-      if (isErrorCreate) {
-        return CallBackError.NetworkError;
-      } else {
+      return null;
+    }
+
+    if ([401, 403, 404, 500, 503].includes(resp.status)) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Something went wrong. Please try again later.",
+        footer: '<a href="#">Why do I have this issue?</a>',
+      });
+      return null;
+    }
+
+    return null;
+  } catch (error: any) {
+    if (error.response) {
+      const statusCode = error.response.status;
+      const errorMessage = error.response.data.error.message|| error.message;
+    
+      if (statusCode === 400) {
+        Swal.fire({
+          icon: "error",
+          title: "Validation Error",
+          text: errorMessage || "Invalid identifier or password",
+        });
+      } else if(statusCode === 401){
+        Swal.fire({
+          icon: "info",
+          title: "Info",
+          text: "Anda Perlu Login Untuk Mengakses Dashboard",
+        });
+
+      } else{
         Swal.fire({
           icon: "error",
           title: "Oops...",
-          text: "Something went wrong!",
-          footer: '<a href="#">Why do I have this issue?</a>'
+          text: errorMessage || "Something went wrong",
         });
       }
-    } else if (resp.status === 401) {
+    } else if (error.message === "Network Error") {
+      // Handle network errors
       Swal.fire({
         icon: "error",
-        title: "Oops...",
-        text: "Something went wrong!",
-        footer: '<a href="#">Why do I have this issue?</a>'
+        title: "Network Error",
+        text: "Please check your internet connection.",
+        footer: '<a href="#">Why do I have this issue?</a>',
       });
-    } else if (resp.status === 403) {
+    } else {
+      // General error handling
       Swal.fire({
         icon: "error",
-        title: "Oops...",
-        text: "Something went wrong!",
-        footer: '<a href="#">Why do I have this issue?</a>'
-      });
-    } else if (
-      resp.status === 404 ||
-      resp.status === 413 ||
-      resp.status === 422 ||
-      resp.status === 409
-    ) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Something went wrong!",
-        footer: '<a href="#">Why do I have this issue?</a>'
-      });
-    } else if (resp.status === 500) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Something went wrong!",
-        footer: '<a href="#">Why do I have this issue?</a>'
-      });
-    } else if (resp.status === 503 || resp.status === 525) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Something went wrong!",
-        footer: '<a href="#">Why do I have this issue?</a>'
-      });
-    } else if (resp.status === 504) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Something went wrong!",
-        footer: '<a href="#">Why do I have this issue?</a>'
+        title: "Unexpected Error",
+        text: error.message || "An unexpected error occurred.",
+        footer: '<a href="#">Why do I have this issue?</a>',
       });
     }
-    return null;
-  } catch (e) {
-    console.log(`error request : ${e}`,);
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: e as string,
-      footer: '<a href="#">Why do I have this issue?</a>'
-    });
+
     return null;
   } finally {
     console.debug("::FINISH::");
@@ -225,7 +207,7 @@ export async function get(props: FetchInterfaceGet) {
     {
       method: "GET",
       url: baseUrl() + props.path,
-    //   headers: await header(props.isNeedToken),
+      headers: await header(props.isNeedToken),
       timeout: timeOut,
       timeoutErrorMessage: "Request Timeout",
       params: props.params,
@@ -235,7 +217,7 @@ export async function get(props: FetchInterfaceGet) {
 }
 
 export async function put(props: FetchInterface) {
-  return RequestData(
+    return RequestData(
     {
       method: "PUT",
       url: baseUrl() + props.path,
